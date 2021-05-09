@@ -9,7 +9,8 @@ import (
 )
 
 type bymin struct {
-	Total    int64 `json:"total"`
+	Requests int64 `json:"requests"`
+	total    int64 `json:"total"`
 	Avg      int64 `json:"avg"`
 	Longest  int64 `json:"longest"`
 	Shortest int64 `json:"shortest"`
@@ -50,15 +51,17 @@ func main() {
 		lat := time.Now().Sub(s).Nanoseconds()
 		if !k {
 			stats.data[s.Format("02-01-2006 15:04")] = bymin{
-				Total:    1,
-				Avg:      time.Now().Sub(s).Nanoseconds(),
+				Requests: 1,
+				total:    lat,
+				Avg:      lat,
 				Longest:  lat,
 				Shortest: lat,
 			}
 			return
 		}
-		v.Total++
-		v.Avg = ((v.Avg + time.Now().Sub(s).Nanoseconds()) / v.Total)
+		v.Requests++
+		v.total += lat
+		v.Avg = (v.total / v.Requests)
 		if lat > v.Longest {
 			v.Longest = lat
 		}
