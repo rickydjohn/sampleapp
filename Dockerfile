@@ -1,7 +1,11 @@
 FROM golang:1.15.7-buster
 
-RUN mkdir /sampleapp
-COPY . /sampleapp/
-RUN go build -o /sampleapp/main /sampleapp/src/sample.go
+RUN apt-get update && \
+    apt-get install -y git && \
+    git clone https://github.com/rickydjohn/sampleapp.git
 
-ENTRYPOINT ["/sampleapp/main"]
+WORKDiR sampleapp
+
+RUN go build -o sampleapp src/sample.go
+
+ENTRYPOINT ["./sampleapp"]
