@@ -4,7 +4,7 @@ RUN apt-get update && \
     apt-get install -y git && \
     git clone https://github.com/rickydjohn/sampleapp.git
 
-WORKDiR sampleapp
+WORKDIR sampleapp
 
 RUN go build -o sampleapp src/sample.go
 
