@@ -6,6 +6,7 @@ RUN apt-get update && \
 
 WORKDIR sampleapp
 
+RUN echo "blah"
 RUN go build -o sampleapp src/sample.go
 
 ENTRYPOINT ["./sampleapp"]
