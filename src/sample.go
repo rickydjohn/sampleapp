@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"time"
-	"os"
 )
 
 type bymin struct {
@@ -33,7 +33,13 @@ func main() {
 		log.Println("received request from ", req.RemoteAddr, "at ", req.RequestURI)
 		stats.RLock()
 		defer stats.RUnlock()
-		bt, err := json.Marshal(stats.data)
+
+		name, _ := os.Hostname()
+
+		p := make(map[string]interface{})
+		p["Stats"] = stats.data
+		p["Hostname"] = name
+		bt, err := json.Marshal(p)
 		if err != nil {
 			log.Println(err)
 		}
@@ -73,40 +79,39 @@ func main() {
 		return
 	})
 
-	
 	http.HandleFunc("/createfile", func(rw http.ResponseWriter, req *http.Request) {
-	    if req.Method == http.MethodPost {
-	      log.Println("received request from ", req.RemoteAddr, "at ", req.RequestURI)
-	      hostname, err := os.Hostname()
-	      if err != nil {
-		log.Println(err.Error())
-		http.Error(rw, "Internal error: "+err.Error(), http.StatusInternalServerError)
+		if req.Method == http.MethodPost {
+			log.Println("received request from ", req.RemoteAddr, "at ", req.RequestURI)
+			hostname, err := os.Hostname()
+			if err != nil {
+				log.Println(err.Error())
+				http.Error(rw, "Internal error: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			file, err := os.OpenFile("/data/"+hostname, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+			if err != nil {
+				log.Println(err.Error())
+				http.Error(rw, "Internal error: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			defer file.Close()
+
+			_, err = file.WriteString("data written from " + hostname + " at " + time.Now().String() + "\n")
+			if err != nil {
+				log.Println(err.Error())
+				http.Error(rw, "Internal error:"+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			return
+
+		}
+		http.Error(rw, "Method not allowed", http.StatusMethodNotAllowed)
 		return
-	      }
+	})
 
-	      file, err := os.OpenFile("/data/"+hostname, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-
-	      if err != nil {
-		log.Println(err.Error())
-		http.Error(rw, "Internal error: "+err.Error(), http.StatusInternalServerError)
-		return
-	      }
-
-	      defer file.Close()
-
-	      _, err = file.WriteString("data written from " + hostname + " at " + time.Now().String() + "\n")
-	      if err != nil {
-		log.Println(err.Error())
-		http.Error(rw, "Internal error:"+err.Error(), http.StatusInternalServerError)
-		return
-	      }
-	      return
-
-	    }
-	    http.Error(rw, "Method not allowed", http.StatusMethodNotAllowed)
-	    return
-	  })
-	
 	if err := http.ListenAndServe(":8000", nil); err != nil {
 		log.Fatal(err)
 	}
